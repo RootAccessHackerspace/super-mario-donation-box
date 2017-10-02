@@ -1,10 +1,11 @@
 import argparse
+import json
 import os
 import shutil
 
 from PIL import Image, ImageSequence
 
-output_dir = 'board/gifs'
+output_dir = 'board/json'
 
 
 def main(args):
@@ -26,25 +27,28 @@ def main(args):
 
         for i, name in enumerate(frame_list):
             im = Image.open(path(anim, name)).convert('RGBA')
-            data = []
+            data = {}
             for x in range(16):
                 for y in range(16):
                     rgba = im.getpixel((x, y))
-                    data.append(''.join(
-                        [hex(b)[2:].zfill(2) for b in rgba[:3]]
-                    ))
-                    # Black stays off, transparent == dark gray to show outline
-                    # if rgba == (0, 0, 0, 255):
-                    #     data[-1] = '222222'
                     if rgba[3] == 0:
-                        data[-1] = '444444'
+                        continue
+
+                    key = ':'.join(map(str, rgba[:3]))
+                    data.setdefault(key, [])
+                    data[key].append((x, y))
+                    # # Black stays off, transparent == dark gray to show outline
+                    # # if rgba == (0, 0, 0, 255):
+                    # #     data[-1] = '222222'
+                    # if rgba[3] == 0:
+                    #     data[-1] = '444444'
 
             if not os.path.isdir('{0}/{1}'.format(output_dir, anim)):
                 os.mkdir('{0}/{1}'.format(output_dir, anim))
-            output_file = '{0}/{1}/{2}.txt'.format(
+            output_file = '{0}/{1}/{2}.json'.format(
                 output_dir, anim, str(i).zfill(2))
             with open(output_file, 'w') as f:
-                f.write(','.join(data))
+                f.write(json.dumps(data))
 
 
 if __name__ == '__main__':
